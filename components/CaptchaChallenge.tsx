@@ -13,14 +13,14 @@ interface CaptchaChallengeProps {
 }
 
 const GAME_CONFIG = {
-    [CaptchaDifficulty.EASY]: { speed: 4, gravity: 0.6, jumpStrength: -10, gapMin: 150, gapMax: 300, winScore: 500 },
-    [CaptchaDifficulty.MEDIUM]: { speed: 6, gravity: 0.6, jumpStrength: -11, gapMin: 120, gapMax: 250, winScore: 1000 },
-    [CaptchaDifficulty.HARD]: { speed: 6, gravity: 0.7, jumpStrength: -12, gapMin: 100, gapMax: 220, winScore: 2000 },
+    [CaptchaDifficulty.EASY]: { speed: 6, gravity: 0.6, jumpStrength: -16, gapMin: 150, gapMax: 300, winScore: 500 },
+    [CaptchaDifficulty.MEDIUM]: { speed: 7, gravity: 0.6, jumpStrength: -17, gapMin: 120, gapMax: 250, winScore: 1000 },
+    [CaptchaDifficulty.HARD]: { speed: 8, gravity: 0.7, jumpStrength: -18, gapMin: 100, gapMax: 220, winScore: 2000 },
 };
 
 const CHARACTER_SIZE = 240;
-const OBSTACLE_WIDTH = 25;
-const OBSTACLE_HEIGHT = 45;
+const OBSTACLE_WIDTH = 40;
+const OBSTACLE_HEIGHT = 60;
 
 const CaptchaChallenge: React.FC<CaptchaChallengeProps> = ({ onVerify, onSuccess, onStart, onMilestone, onGameOver, onScoreUpdate, onSessionRewardUpdate, isMining }) => {
     const [difficulty, setDifficulty] = useState<CaptchaDifficulty>(CaptchaDifficulty.HARD);
@@ -38,6 +38,7 @@ const CaptchaChallenge: React.FC<CaptchaChallengeProps> = ({ onVerify, onSuccess
 
     const [sessionReward, setSessionReward] = useState(0);
     const [rewardMessage, setRewardMessage] = useState<string | null>(null);
+    const [characterPosition, setCharacterPosition] = useState({ x: 50, y: 0, grounded: true });
 
     // Update parent component with score changes
     useEffect(() => {
@@ -75,6 +76,8 @@ const CaptchaChallenge: React.FC<CaptchaChallengeProps> = ({ onVerify, onSuccess
     const characterRef = useRef({ x: 50, y: 0, dy: 0, grounded: true });
     const characterSpriteRef = useRef<HTMLImageElement | null>(null);
     const flagBgRef = useRef<HTMLImageElement | null>(null);
+    const gameBackgroundRef = useRef<HTMLImageElement | null>(null);
+    const mountainRockRef = useRef<HTMLImageElement | null>(null);
     const obstaclesRef = useRef<{ x: number; width: number; height: number; type: 'duststorm'; y: number; warned?: boolean }[]>([]);
     const scoreRef = useRef(0);
     const lastMilestoneRef = useRef(0);
@@ -95,15 +98,25 @@ const CaptchaChallenge: React.FC<CaptchaChallengeProps> = ({ onVerify, onSuccess
         // Load jump sound
         jumpAudio.current = new Audio('/dist/sounds/whale sound.mp3');
 
-        // Load Character sprite
+        // Load Character sprite (animated GIF)
         const charImg = new Image();
-        charImg.src = '/download.png';
+        charImg.src = '/character.gif';
         charImg.onload = () => { characterSpriteRef.current = charImg; };
 
         // Load Mars background
         const marsImg = new Image();
         marsImg.src = '/mars_background.png';
         marsImg.onload = () => { flagBgRef.current = marsImg; };
+
+        // Load game background image
+        const bgImg = new Image();
+        bgImg.src = '/game_background.jpg';
+        bgImg.onload = () => { gameBackgroundRef.current = bgImg; };
+
+        // Load mountain rock obstacle sprite
+        const rockImg = new Image();
+        rockImg.src = '/mountain_rock.png';
+        rockImg.onload = () => { mountainRockRef.current = rockImg; };
 
         // Initialize dust particles
         const particles = [];
@@ -235,7 +248,8 @@ const CaptchaChallenge: React.FC<CaptchaChallengeProps> = ({ onVerify, onSuccess
 
             const width = canvas.width;
             const height = canvas.height;
-            const groundY = height - 10;
+            // Position ground lower on the cracked road surface to sync with road edge
+            const groundY = Math.floor(height * 0.85);
             const cfg = configRef.current;
 
             const isPlaying = gameState === 'PLAYING';
@@ -292,9 +306,9 @@ const CaptchaChallenge: React.FC<CaptchaChallengeProps> = ({ onVerify, onSuccess
                 // Mars Dust Storm Spawning logic
                 const lastObs = obstaclesRef.current[obstaclesRef.current.length - 1];
 
-                // Cap the gap so it doesn't get too wide at high speeds
-                const minGap = Math.min(speedRef.current * 40, 450);
-                const variance = Math.random() * 180;
+                // Increased gap between obstacles for higher jumps
+                const minGap = Math.min(speedRef.current * 70, 600);
+                const variance = Math.random() * 250 + 100; // 100-350 extra spacing
 
                 // Failsafe: If no obstacles, force spawn immediately
                 const shouldSpawn = !lastObs || (width - lastObs.x > minGap + variance);
@@ -329,21 +343,23 @@ const CaptchaChallenge: React.FC<CaptchaChallengeProps> = ({ onVerify, onSuccess
 
             // Collision Detection
             if (isPlaying) {
-                const hitMargin = CHARACTER_SIZE * 0.2; // 20% forgiveness
+                // Character hitbox - focus on the lower body/feet area
+                const horizontalMargin = CHARACTER_SIZE * 0.25; // 25% margin on sides
+                const topMargin = CHARACTER_SIZE * 0.4; // 40% margin on top (head can pass over)
+                const bottomMargin = CHARACTER_SIZE * 0.05; // Small margin at feet
+
                 const crash = obstaclesRef.current.some(obs => {
-                    const px = p.x + hitMargin;
-                    const py = p.y + hitMargin;
-                    const pw = CHARACTER_SIZE - (hitMargin * 2);
-                    const ph = CHARACTER_SIZE - (hitMargin * 2);
+                    // Character hitbox (lower portion - the body/legs area)
+                    const px = p.x + horizontalMargin;
+                    const py = p.y + topMargin;
+                    const pw = CHARACTER_SIZE - (horizontalMargin * 2);
+                    const ph = CHARACTER_SIZE - topMargin - bottomMargin;
 
-                    // Obstacle Hitbox
-                    let ox = obs.x + (obs.width * 0.1);
-                    let oy = obs.y;
-                    let ow = obs.width * 0.8;
-                    let oh = obs.height;
-
-                    // Iceberg logic: obs.y is already top-left
-                    oy = obs.y;
+                    // Obstacle Hitbox - reasonable size for fair collision
+                    const ox = obs.x + (obs.width * 0.15);
+                    const oy = obs.y + (obs.height * 0.1);
+                    const ow = obs.width * 0.7;
+                    const oh = obs.height * 0.8;
 
                     return (
                         px < ox + ow &&
@@ -392,82 +408,98 @@ const CaptchaChallenge: React.FC<CaptchaChallengeProps> = ({ onVerify, onSuccess
 
             // Drawing
             const drawBackground = () => {
-                // Clear canvas with transparent background
+                // Clear canvas
                 ctx.clearRect(0, 0, width, height);
+
+                // Draw the game background image if loaded
+                if (gameBackgroundRef.current) {
+                    // Scale and fill the canvas while maintaining aspect ratio
+                    const img = gameBackgroundRef.current;
+                    const imgAspect = img.width / img.height;
+                    const canvasAspect = width / height;
+
+                    let drawWidth, drawHeight, drawX, drawY;
+
+                    if (canvasAspect > imgAspect) {
+                        // Canvas is wider than image
+                        drawWidth = width;
+                        drawHeight = width / imgAspect;
+                        drawX = 0;
+                        drawY = (height - drawHeight) / 2;
+                    } else {
+                        // Canvas is taller than image
+                        drawHeight = height;
+                        drawWidth = height * imgAspect;
+                        drawX = (width - drawWidth) / 2;
+                        drawY = 0;
+                    }
+
+                    ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+                } else {
+                    // Fallback background color
+                    ctx.fillStyle = '#2d3748';
+                    ctx.fillRect(0, 0, width, height);
+                }
             };
 
             drawBackground();
 
-            // Ground - Dusty Mars surface
-            ctx.fillStyle = '#3d1a10'; // Dark reddish brown
-            ctx.fillRect(0, groundY, width, 10);
+            // No ground line needed - using the platform road from background image
 
-            // Draw Obstacles
+            // Draw Obstacles - Mountain rocks
             obstaclesRef.current.forEach(obs => {
                 if (obs.type === 'duststorm') {
                     ctx.save();
                     ctx.translate(obs.x, groundY);
 
-                    // Draw white obstacles
+                    // Draw rock shape that blends with the platform
                     const rockGradient = ctx.createLinearGradient(0, -obs.height, 0, 0);
-                    rockGradient.addColorStop(0, '#ffffff'); // Pure white
-                    rockGradient.addColorStop(1, '#cccccc'); // Light grey
+                    rockGradient.addColorStop(0, '#8a7a6a'); // Lighter brown top
+                    rockGradient.addColorStop(0.3, '#6a5a4a'); // Mid brown
+                    rockGradient.addColorStop(0.7, '#5a4a3a'); // Darker
+                    rockGradient.addColorStop(1, '#4a3a2a'); // Dark brown base
                     ctx.fillStyle = rockGradient;
 
-                    // Jagged rock shape
+                    // More natural jagged rock shape
                     ctx.beginPath();
                     ctx.moveTo(0, 0);
-                    ctx.lineTo(obs.width * 0.2, -obs.height * 0.6);
+                    ctx.lineTo(obs.width * 0.1, -obs.height * 0.3);
+                    ctx.lineTo(obs.width * 0.25, -obs.height * 0.65);
+                    ctx.lineTo(obs.width * 0.4, -obs.height * 0.85);
                     ctx.lineTo(obs.width * 0.5, -obs.height);
-                    ctx.lineTo(obs.width * 0.8, -obs.height * 0.7);
+                    ctx.lineTo(obs.width * 0.6, -obs.height * 0.9);
+                    ctx.lineTo(obs.width * 0.75, -obs.height * 0.6);
+                    ctx.lineTo(obs.width * 0.9, -obs.height * 0.35);
                     ctx.lineTo(obs.width, 0);
                     ctx.closePath();
                     ctx.fill();
 
-                    // Optional: Inner detail for the rock
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                    // Add rock texture details
+                    ctx.strokeStyle = 'rgba(40, 30, 20, 0.4)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(obs.width * 0.2, -obs.height * 0.2);
+                    ctx.lineTo(obs.width * 0.35, -obs.height * 0.5);
+                    ctx.moveTo(obs.width * 0.5, -obs.height * 0.3);
+                    ctx.lineTo(obs.width * 0.6, -obs.height * 0.6);
+                    ctx.moveTo(obs.width * 0.7, -obs.height * 0.15);
+                    ctx.lineTo(obs.width * 0.8, -obs.height * 0.4);
+                    ctx.stroke();
+
+                    // Add subtle highlight
+                    ctx.strokeStyle = 'rgba(180, 160, 140, 0.3)';
                     ctx.lineWidth = 1;
                     ctx.beginPath();
-                    ctx.moveTo(obs.width * 0.3, -obs.height * 0.3);
-                    ctx.lineTo(obs.width * 0.5, -obs.height * 0.7);
+                    ctx.moveTo(obs.width * 0.3, -obs.height * 0.7);
+                    ctx.lineTo(obs.width * 0.45, -obs.height * 0.9);
                     ctx.stroke();
 
                     ctx.restore();
                 }
             });
 
-            // Draw Character (using sprite image)
-            const drawCharacter = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
-                const isJumping = !characterRef.current.grounded;
-
-                ctx.save();
-                ctx.translate(x + size / 2, y + size / 2);
-                ctx.translate(-size / 2, -size / 2);
-
-                // Draw shadow if grounded
-                if (!isJumping) {
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-                    ctx.beginPath();
-                    ctx.ellipse(size * 0.5, size * 0.95, size * 0.4, size * 0.08, 0, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-
-                // Draw Character sprite
-                if (characterSpriteRef.current) {
-                    ctx.drawImage(characterSpriteRef.current, 0, 0, size, size);
-                } else {
-                    // Fallback: simple silhouette
-                    ctx.fillStyle = '#1e40af';
-                    ctx.beginPath();
-                    ctx.arc(size * 0.5, size * 0.3, size * 0.25, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.fillRect(size * 0.3, size * 0.5, size * 0.4, size * 0.45);
-                }
-
-                ctx.restore();
-            };
-
-            drawCharacter(ctx, p.x, p.y, CHARACTER_SIZE);
+            // Update character position state for the animated GIF overlay
+            setCharacterPosition({ x: p.x, y: p.y, grounded: p.grounded });
 
             // Overlays
             if (gameState === 'IDLE') {
@@ -546,6 +578,35 @@ const CaptchaChallenge: React.FC<CaptchaChallengeProps> = ({ onVerify, onSuccess
                 </div>
             )}
 
+            {/* Animated Character GIF Overlay */}
+            <img
+                src="/character.gif"
+                alt="Character"
+                className="absolute pointer-events-none"
+                style={{
+                    left: characterPosition.x,
+                    top: characterPosition.y,
+                    width: CHARACTER_SIZE,
+                    height: CHARACTER_SIZE,
+                    filter: characterPosition.grounded ? 'none' : 'drop-shadow(0 8px 4px rgba(0,0,0,0.3))',
+                    transition: 'filter 0.1s ease',
+                }}
+            />
+
+            {/* Shadow under character */}
+            {characterPosition.grounded && (
+                <div
+                    className="absolute pointer-events-none rounded-full"
+                    style={{
+                        left: characterPosition.x + CHARACTER_SIZE * 0.1,
+                        top: characterPosition.y + CHARACTER_SIZE * 0.9,
+                        width: CHARACTER_SIZE * 0.8,
+                        height: CHARACTER_SIZE * 0.15,
+                        backgroundColor: 'rgba(0,0,0,0.3)',
+                        filter: 'blur(4px)',
+                    }}
+                />
+            )}
 
             {/* Game Info Overlay - Removed from canvas, now in Dashboard */}
         </div>
