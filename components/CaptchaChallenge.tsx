@@ -18,7 +18,7 @@ const GAME_CONFIG = {
     [CaptchaDifficulty.HARD]: { speed: 6, gravity: 0.7, jumpStrength: -12, gapMin: 100, gapMax: 220, winScore: 2000 },
 };
 
-const CHARACTER_SIZE = 120;
+const CHARACTER_SIZE = 240;
 const OBSTACLE_WIDTH = 25;
 const OBSTACLE_HEIGHT = 45;
 
@@ -97,7 +97,7 @@ const CaptchaChallenge: React.FC<CaptchaChallengeProps> = ({ onVerify, onSuccess
 
         // Load Character sprite
         const charImg = new Image();
-        charImg.src = '/Без названия (1).png';
+        charImg.src = '/download.png';
         charImg.onload = () => { characterSpriteRef.current = charImg; };
 
         // Load Mars background
@@ -190,7 +190,7 @@ const CaptchaChallenge: React.FC<CaptchaChallengeProps> = ({ onVerify, onSuccess
             }
 
             keysPressed.current[e.code] = true;
-            
+
             if (e.code === 'Space') {
                 e.preventDefault();
                 if (gameState === 'IDLE') {
@@ -249,7 +249,7 @@ const CaptchaChallenge: React.FC<CaptchaChallengeProps> = ({ onVerify, onSuccess
 
             // Update Character
             const p = characterRef.current;
-            
+
             if (isPlaying) {
                 // Variable Gravity
                 const gravity = cfg.gravity;
@@ -546,7 +546,7 @@ const CaptchaChallenge: React.FC<CaptchaChallengeProps> = ({ onVerify, onSuccess
                 </div>
             )}
 
-            
+
             {/* Game Info Overlay - Removed from canvas, now in Dashboard */}
         </div>
     );

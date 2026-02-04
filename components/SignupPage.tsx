@@ -4,7 +4,7 @@ import LightRays from './LightRays';
 import SignInModal from './SignInModal';
 import { generateSolanaWallet, saveWalletToStorage, WalletData } from '../utils/solanaWallet';
 
-const mainLogo = '/Без названия (1).png';
+const mainLogo = '/download.png';
 
 interface SignupPageProps {
     onWalletGenerated: (wallet: WalletData) => void;
@@ -75,7 +75,7 @@ const FloatingText: React.FC = () => {
                     ctx.fillStyle = '#ffffff';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    
+
                     // Show truncated version of wallet address with better visibility
                     const shortText = '7zqWzED...pump';
                     ctx.fillText(shortText, 0, 0);

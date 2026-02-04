@@ -9,7 +9,7 @@ interface HeaderProps {
   onSettingsClick: () => void;
 }
 
-const mainLogo = '/Без названия (1).png';
+const mainLogo = '/download.png';
 
 const Header: React.FC<HeaderProps> = ({ status, onLogout, onSettingsClick }) => {
   const isActive = status === MinerStatus.MINING || status === MinerStatus.TAB_MINING;
