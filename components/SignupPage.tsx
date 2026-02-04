@@ -30,10 +30,10 @@ const FloatingText: React.FC = () => {
         window.addEventListener('resize', resize);
         resize();
 
-        // Initialize floating items (text and whales)
+        // Initialize floating items (text and trout)
         for (let i = 0; i < 20; i++) {
             floatingItems.push({
-                text: i % 3 === 0 ? '🐋' : '7zqWzEDAU2GHkWmZ9gXbwCQBHt3dLBPo97n7vmDNpump',
+                text: i % 3 === 0 ? '🐟' : '7zqWzEDAU2GHkWmZ9gXbwCQBHt3dLBPo97n7vmDNpump',
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
                 size: Math.random() * 25 + 20,
@@ -64,7 +64,7 @@ const FloatingText: React.FC = () => {
                 ctx.rotate(item.rotation);
                 ctx.globalAlpha = item.opacity;
 
-                if (item.text === '🐋') {
+                if (item.text === '🐟') {
                     ctx.font = `${item.size}px serif`;
                     ctx.fillStyle = '#ffffff';
                     ctx.textAlign = 'center';
@@ -244,7 +244,8 @@ const SignupPage: React.FC<SignupPageProps> = ({ onWalletGenerated }) => {
             className="min-h-screen flex flex-col text-white selection:bg-zinc-500/30 relative overflow-hidden"
         >
             {/* Background Floating Text and Models */}
-            <FloatingText />
+            {/* FloatingText removed as per user request */}
+            {/* <FloatingText /> */}
             <FloatingMoltModels />
 
             <div className="absolute inset-0 pointer-events-none z-[1] opacity-30">
@@ -259,10 +260,15 @@ const SignupPage: React.FC<SignupPageProps> = ({ onWalletGenerated }) => {
                         {/* Logo/Brand */}
                         <div className="mb-12">
                             <div className="mb-6 flex justify-center">
-                                <img src={mainLogo} alt="$WR MADE BY WHITE WHALE DEV" className="w-24 h-24 drop-shadow-[0_0_20px_rgba(26,26,26,0.5)]" />
+                                <img src={mainLogo} alt="$TR MADE BY WHITE WHALE DEV" className="w-24 h-24 drop-shadow-[0_0_20px_rgba(26,26,26,0.5)]" />
+                            </div>
+                            <div className="mb-2 w-full text-center">
+                                <span className="bg-zinc-800/80 text-white/90 px-3 py-1.5 rounded-2xl text-[10px] sm:text-xs font-mono tracking-wide border border-white/10 select-all backdrop-blur-sm cursor-text hover:bg-zinc-700/80 transition-colors">
+                                    CA: 6AQazM8VRG4cTPk2nT6pvvRVzuSxuu5WGQCRKSenpump
+                                </span>
                             </div>
                             <h1 className="text-5xl font-black text-white mb-3 tracking-tighter uppercase italic">
-                                $WR MADE BY WHITE WHALE DEV
+                                $BTR MADE BY WHITE WHALE DEV
                             </h1>
                         </div>
 
