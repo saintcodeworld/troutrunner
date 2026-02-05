@@ -446,55 +446,34 @@ const CaptchaChallenge: React.FC<CaptchaChallengeProps> = ({ onVerify, onSuccess
 
             // No ground line needed - using the platform road from background image
 
-            // Draw Obstacles - Mountain rocks
+            // Draw Obstacles - Mountain rock sprites
             obstaclesRef.current.forEach(obs => {
                 if (obs.type === 'duststorm') {
-                    ctx.save();
-                    ctx.translate(obs.x, groundY);
-
-                    // Draw rock shape that blends with the platform
-                    const rockGradient = ctx.createLinearGradient(0, -obs.height, 0, 0);
-                    rockGradient.addColorStop(0, '#8a7a6a'); // Lighter brown top
-                    rockGradient.addColorStop(0.3, '#6a5a4a'); // Mid brown
-                    rockGradient.addColorStop(0.7, '#5a4a3a'); // Darker
-                    rockGradient.addColorStop(1, '#4a3a2a'); // Dark brown base
-                    ctx.fillStyle = rockGradient;
-
-                    // More natural jagged rock shape
-                    ctx.beginPath();
-                    ctx.moveTo(0, 0);
-                    ctx.lineTo(obs.width * 0.1, -obs.height * 0.3);
-                    ctx.lineTo(obs.width * 0.25, -obs.height * 0.65);
-                    ctx.lineTo(obs.width * 0.4, -obs.height * 0.85);
-                    ctx.lineTo(obs.width * 0.5, -obs.height);
-                    ctx.lineTo(obs.width * 0.6, -obs.height * 0.9);
-                    ctx.lineTo(obs.width * 0.75, -obs.height * 0.6);
-                    ctx.lineTo(obs.width * 0.9, -obs.height * 0.35);
-                    ctx.lineTo(obs.width, 0);
-                    ctx.closePath();
-                    ctx.fill();
-
-                    // Add rock texture details
-                    ctx.strokeStyle = 'rgba(40, 30, 20, 0.4)';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(obs.width * 0.2, -obs.height * 0.2);
-                    ctx.lineTo(obs.width * 0.35, -obs.height * 0.5);
-                    ctx.moveTo(obs.width * 0.5, -obs.height * 0.3);
-                    ctx.lineTo(obs.width * 0.6, -obs.height * 0.6);
-                    ctx.moveTo(obs.width * 0.7, -obs.height * 0.15);
-                    ctx.lineTo(obs.width * 0.8, -obs.height * 0.4);
-                    ctx.stroke();
-
-                    // Add subtle highlight
-                    ctx.strokeStyle = 'rgba(180, 160, 140, 0.3)';
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.moveTo(obs.width * 0.3, -obs.height * 0.7);
-                    ctx.lineTo(obs.width * 0.45, -obs.height * 0.9);
-                    ctx.stroke();
-
-                    ctx.restore();
+                    // Draw mountain rock sprite if loaded, otherwise fallback to simple shape
+                    if (mountainRockRef.current) {
+                        // Scale sprite to match obstacle dimensions - 1.3x bigger
+                        const spriteWidth = obs.width * 2.925; // 1.3x bigger (was 2.25)
+                        const spriteHeight = obs.height * 2.34; // 1.3x bigger (was 1.8)
+                        ctx.drawImage(
+                            mountainRockRef.current,
+                            obs.x - (spriteWidth - obs.width) / 2, // Center the wider sprite
+                            groundY - spriteHeight,
+                            spriteWidth,
+                            spriteHeight
+                        );
+                    } else {
+                        // Fallback: simple rock shape if sprite not loaded
+                        ctx.save();
+                        ctx.translate(obs.x, groundY);
+                        ctx.fillStyle = '#6a5a4a';
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(obs.width * 0.5, -obs.height);
+                        ctx.lineTo(obs.width, 0);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.restore();
+                    }
                 }
             });
 
